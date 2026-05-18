@@ -1,0 +1,30 @@
+ cd downloads
+ ssh -i "fs-key.pem" ubuntu@ec2-34-207-117-122.compute-1.amazonaws.com
+
+~$ ping 54.172.154.152
+
+ nano file.txt
+
+ scp -i "fs-key.pem" fs-key.pem ubuntu@:/home/ubuntu/
+~$ exit
+
+scp -i "fs-key.pem" fs-key.pem ubuntu@34.207.117.122:/home/ubuntu/
+
+ ssh -i "fs-key.pem" ubuntu@ec2-34-207-117-122.compute-1.amazonaws.com
+
+ubuntu@ip-172-31-19-251:~$ ls
+file.txt  fs-key.pem
+
+~$ scp -i "fs-key.pem" file.txt ubuntu@54.172.154.152:/home/ubuntu/
+This private key will be ignored.
+Load key "fs-key.pem": bad permissions
+ubuntu@54.172.154.152: Permission denied (publickey).
+scp: Connection closed
+
+$ chmod 400 "fs-key.pem"
+
+ubuntu@ip-172-31-19-251:~$ scp -i "fs-key.pem" file.txt ubuntu@54.172.154.152:/home/ubuntu/
+file.txt                                                                              100%   24    27.2KB/s   00:00
+ubuntu@ip-172-31-19-251:~$
+
+ ssh -i "fs-key.pem" ubuntu@ec2-54-172-154-152.compute-1.amazonaws.com

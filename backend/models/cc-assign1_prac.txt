@@ -1,0 +1,33 @@
+
+
+PS C:\Users\GARGI KALEKAR\downloads> chmod 400 "fs-key.pem"
+
+
+PS C:\Users\GARGI KALEKAR\downloads> ssh -i "fs-key.pem" ubuntu@ec2-3-88-170-34.compute-1.amazonaws.com
+
+
+ubuntu@ip-172-31-19-105:~$ ls
+ubuntu@ip-172-31-19-105:~$ cd home/ubuntu
+
+
+ubuntu@ip-172-31-19-105:~$ ls
+index.html
+
+ubuntu@ip-172-31-19-105:~$ sudo chmod 644 index.html
+ubuntu@ip-172-31-19-105:~$ sudo apt install nginx
+
+ubuntu@ip-172-31-19-105:~$ sudo systemctl start nginx
+ubuntu@ip-172-31-19-105:~$ sudo systemctl enable nginx
+
+ubuntu@ip-172-31-19-105:~$ sudo systemctl status nginx
+
+
+
+ubuntu@ip-172-31-19-105:~$ sudo mv index.html /var/www/html/
+ubuntu@ip-172-31-19-105:~$ exit
+logout
+Connection to ec2-3-88-170-34.compute-1.amazonaws.com closed.
+PS C:\Users\GARGI KALEKAR\downloads> 
+
+
+sudo chmod 644 index.html
