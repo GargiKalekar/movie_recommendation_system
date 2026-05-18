@@ -1,0 +1,347 @@
+public class WorkerManager33 {
+    public static void menu(Integer choice, String name, String email, Date birthday, Integer workerid, String department){
+        if(choice==1){
+            //insert
+            Worker3__c workerselect= new Worker3__c();
+            workerselect.Name= name;
+            workerselect.Email__c= email;
+            workerselect.Birthdate__c= birthday;
+            workerselect.Workerid__c= workerid;
+            workerselect.Department__c= department;
+            insert workerselect;
+            System.debug('Inserted record');
+        }
+        else if(choice==2){
+            List<Worker3__c> workerlist;
+            workerlist= [SELECT Name, Email__c, Birthdate__c, Workerid__c, Department__c FROM Worker3__c];
+            for(Worker3__c workie: workerlist){
+                System.debug('Name '+'|'+ workie.Name + 'Employeeid: ' + '|' + workie.Workerid__c );
+            }
+            //view
+        }
+        else if(choice==3){
+            //update
+            Worker3__c worker_u= [SELECT Id, Name, Email__c, Birthdate__c, Workerid__c, Department__c FROM Worker3__c WHERE Workerid__c=: workerid];
+            if(name!=null){
+                worker_u.Name= name;
+            }
+            if(department!=null){
+                worker_u.Department__c= department;
+            }
+            update worker_u;
+            System.debug('updated record');
+        }
+        else if(choice==4){
+            //delete
+            Worker3__c worker2= [SELECT Id FROM Worker3__c WHERE Workerid__c= :workerid];
+            delete worker2;
+        }
+        else{
+            System.debug('Invalid choice.');
+        }
+    }
+}
+
+WorkerManager33.menu(1, 'MANORAMA', 'MANORAMA@GMAIL',Date.newInstance(1995,02,02), 5, 'CE');
+WorkerManager33.menu(2, null, null ,null ,null , null);
+WorkerManager33.menu(1,'MANGALAM', 'IMANGS@GMAIL', Date.newInstance(2005,01,16),6,  'CE');
+WorkerManager33.menu(3, 'Manorama Mudgal', null ,null ,5 , null);
+WorkerManager33.menu(2, null, null ,null ,null , null);
+WorkerManager33.menu(4, null, null ,null ,6 , null);
+WorkerManager33.menu(2, null, null ,null ,null , null);
+
+
+public class BankAccountManager {
+    public static void menu(
+        Integer choice,
+        Integer accountNumber,
+        String holderName,
+        String email,
+        Date birthDate,
+        String department,
+        Decimal balance
+    ) {
+        // ─── 1. CREATE ───────────────────────────────────────────
+        if (choice == 1) {
+            try {
+                BankAccount__c acc = new BankAccount__c();
+                acc.AccountNumber__c = accountNumber;
+                acc.Name             = holderName;
+                acc.Email__c         = email;
+                acc.BirthDate__c     = birthDate;
+                acc.Department__c    = department;
+                acc.Balance__c       = balance;
+                insert acc;
+                System.debug(' Account Created Successfully!');
+                System.debug('Account Number: ' + accountNumber + ' | Name: ' + holderName);
+            } catch (Exception e) {
+                System.debug(' Error: ' + e.getMessage());
+            }
+        }
+
+        // ─── 2. VIEW ALL ─────────────────────────────────────────
+        else if (choice == 2) {
+            List<BankAccount__c> accList = [
+                SELECT AccountNumber__c, Name, Email__c,
+                       BirthDate__c, Department__c, Balance__c
+                FROM BankAccount__c
+            ];
+            if (accList.isEmpty()) {
+                System.debug('No records found.');
+            } else {
+                System.debug('===== ALL BANK ACCOUNTS =====');
+                for (BankAccount__c a : accList) {
+                    System.debug(
+                        'AccNo: '      + a.AccountNumber__c +
+                        ' | Name: '    + a.Name +
+                        ' | Email: '   + a.Email__c +
+                        ' | DOB: '     + a.BirthDate__c +
+                        ' | Dept: '    + a.Department__c +
+                        ' | Balance: ' + a.Balance__c
+                    );
+                }
+            }
+        }
+
+        // ─── 3. VIEW BY ACCOUNT NUMBER ───────────────────────────
+        else if (choice == 3) {
+            try {
+                BankAccount__c a = [
+                    SELECT AccountNumber__c, Name, Email__c,
+                           BirthDate__c, Department__c, Balance__c
+                    FROM BankAccount__c
+                    WHERE AccountNumber__c = :accountNumber
+                    LIMIT 1
+                ];
+                System.debug('===== ACCOUNT DETAILS =====');
+                System.debug('Account No  : ' + a.AccountNumber__c);
+                System.debug('Name        : ' + a.Name);
+                System.debug('Email       : ' + a.Email__c);
+                System.debug('Birth Date  : ' + a.BirthDate__c);
+                System.debug('Department  : ' + a.Department__c);
+                System.debug('Balance     : ' + a.Balance__c);
+            } catch (Exception e) {
+                System.debug(' Account not found: ' + e.getMessage());
+            }
+        }
+
+        // ─── 4. UPDATE ───────────────────────────────────────────
+        else if (choice == 4) {
+            try {
+                BankAccount__c acc = [
+                    SELECT Id, Name, Email__c, BirthDate__c,
+                           Department__c, Balance__c
+                    FROM BankAccount__c
+                    WHERE AccountNumber__c = :accountNumber
+                    LIMIT 1
+                ];
+                if (holderName  != null) acc.Name          = holderName;
+                if (email       != null) acc.Email__c       = email;
+                if (birthDate   != null) acc.BirthDate__c   = birthDate;
+                if (department  != null) acc.Department__c  = department;
+                if (balance     != null) acc.Balance__c     = balance;
+                update acc;
+                System.debug(' Account Updated Successfully!');
+            } catch (Exception e) {
+                System.debug(' Error: ' + e.getMessage());
+            }
+        }
+
+        // ─── 5. DEPOSIT ──────────────────────────────────────────
+        else if (choice == 5) {
+            try {
+                BankAccount__c acc = [
+                    SELECT Id, Balance__c
+                    FROM BankAccount__c
+                    WHERE AccountNumber__c = :accountNumber
+                    LIMIT 1
+                ];
+                acc.Balance__c += balance;   // balance param = deposit amount
+                update acc;
+                System.debug(' Deposited: ' + balance + ' | New Balance: ' + acc.Balance__c);
+            } catch (Exception e) {
+                System.debug(' Error: ' + e.getMessage());
+            }
+        }
+
+        // ─── 6. WITHDRAW ─────────────────────────────────────────
+        else if (choice == 6) {
+            try {
+                BankAccount__c acc = [
+                    SELECT Id, Balance__c
+                    FROM BankAccount__c
+                    WHERE AccountNumber__c = :accountNumber
+                    LIMIT 1
+                ];
+                if (acc.Balance__c < balance) {
+                    System.debug(' Insufficient Balance! Current Balance: ' + acc.Balance__c);
+                } else {
+                    acc.Balance__c -= balance;  // balance param = withdraw amount
+                    update acc;
+                    System.debug(' Withdrawn: ' + balance + ' | New Balance: ' + acc.Balance__c);
+                }
+            } catch (Exception e) {
+                System.debug(' Error: ' + e.getMessage());
+            }
+        }
+
+        // ─── 7. DELETE ───────────────────────────────────────────
+        else if (choice == 7) {
+            try {
+                BankAccount__c acc = [
+                    SELECT Id
+                    FROM BankAccount__c
+                    WHERE AccountNumber__c = :accountNumber
+                    LIMIT 1
+                ];
+                delete acc;
+                System.debug(' Account Deleted Successfully!');
+            } catch (Exception e) {
+                System.debug(' Account not found: ' + e.getMessage());
+            }
+        }
+
+        else {
+            System.debug(' Invalid choice. Please select 1 to 7.');
+        }
+    }
+}
+
+BankAccountManager.menu(1, 1001, 'Rahul Sharma', 'rahul@gmail.com',
+    Date.newInstance(1995, 6, 15), 'Loans', 50000);
+
+
+public class EmailManager {
+
+    // ── Menu ─────────────────────────────────────────────────────
+    public static void menu(
+        Integer choice,
+        String toAddress,
+        String subject,
+        String body,
+        String attachmentName,
+        String attachmentContent
+    ) {
+        // ── 1. Send Simple Email ──────────────────────────────────
+        if (choice == 1) {
+            sendSimpleEmail(toAddress, subject, body);
+        }
+
+        // ── 2. Send Email with Attachment ─────────────────────────
+        else if (choice == 2) {
+            sendEmailWithAttachment(
+                toAddress, subject, body,
+                attachmentName, attachmentContent
+            );
+        }
+
+        // ── 3. Send HTML Email ────────────────────────────────────
+        else if (choice == 3) {
+            sendHtmlEmail(toAddress, subject, body);
+        }
+
+        else {
+            System.debug(' Invalid choice. Select 1, 2 or 3.');
+        }
+    }
+
+    // ── Simple Plain Text Email ───────────────────────────────────
+    private static void sendSimpleEmail(
+        String toAddress,
+        String subject,
+        String body
+    ) {
+        try {
+            Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+            mail.setToAddresses(new List<String>{ toAddress });
+            mail.setSubject(subject);
+            mail.setPlainTextBody(body);
+            Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{ mail });
+            System.debug(' Simple Email Sent to: ' + toAddress);
+        } catch (Exception e) {
+            System.debug(' Error: ' + e.getMessage());
+        }
+    }
+
+    // ── Email with Attachment ─────────────────────────────────────
+    private static void sendEmailWithAttachment(
+        String toAddress,
+        String subject,
+        String body,
+        String attachmentName,
+        String attachmentContent
+    ) {
+        try {
+            Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+            mail.setToAddresses(new List<String>{ toAddress });
+            mail.setSubject(subject);
+            mail.setPlainTextBody(body);
+
+            Messaging.EmailFileAttachment attachment
+                = new Messaging.EmailFileAttachment();
+            attachment.setFileName(attachmentName);
+            attachment.setBody(Blob.valueOf(attachmentContent));
+            attachment.setContentType('text/plain');
+
+            mail.setFileAttachments(
+                new List<Messaging.EmailFileAttachment>{ attachment }
+            );
+            Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{ mail });
+            System.debug(' Email with Attachment Sent to: ' + toAddress);
+            System.debug('Attachment : ' + attachmentName);
+        } catch (Exception e) {
+            System.debug(' Error: ' + e.getMessage());
+        }
+    }
+
+    // ── HTML Email ────────────────────────────────────────────────
+    private static void sendHtmlEmail(
+        String toAddress,
+        String subject,
+        String htmlBody
+    ) {
+        try {
+            Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+            mail.setToAddresses(new List<String>{ toAddress });
+            mail.setSubject(subject);
+
+            // Set HTML body instead of plain text
+            mail.setHtmlBody(htmlBody);
+
+            Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{ mail });
+            System.debug(' HTML Email Sent to: ' + toAddress);
+        } catch (Exception e) {
+            System.debug(' Error: ' + e.getMessage());
+        }
+    }
+}
+
+// ── 1. Simple Email ──
+EmailManager.menu(
+    1,
+    'gargikalekar1@gmail.com',
+    'Welcome to Bank',
+    'Your account has been created successfully.',
+    null,
+    null
+);
+
+// ── 2. Email with Attachment ──
+EmailManager.menu(
+    2,
+    'recipient@gmail.com',
+    'Your Bank Statement',
+    'Please find your account statement attached.',
+    'Statement.txt',
+    'Account No : 1001\nName : Rahul\nBalance : 50000\nDept : Loans'
+);
+
+// ── 3. HTML Email ──
+EmailManager.menu(
+    3,
+    'recipient@gmail.com',
+    'Bank Notification',
+    '<h2>Hello Rahul</h2><p>Your balance is <b>₹50,000</b></p>',
+    null,
+    null
+);

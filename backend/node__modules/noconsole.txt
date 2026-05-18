@@ -1,0 +1,525 @@
+public class ProductInventoryController {
+
+    public String  productName    {get; set;}
+    public String  serialNo       {get; set;}
+    public Id      selectedId     {get; set;}
+    public ProductInventory__c productRecord {get; set;}  // for date fields
+    public List<ProductInventory__c> productList {get; set;}
+
+    // Constructor
+    public ProductInventoryController() {
+        productRecord = new ProductInventory__c();
+        loadProducts();
+    }
+
+    // ── Load All Records ─────────────────────────────────────────
+    public void loadProducts() {
+        productList = [
+            SELECT Id, Name, SerialNo__c,
+                   ManufactureDate__c, ExpiryDate__c
+            FROM ProductInventory__c
+            ORDER BY CreatedDate DESC
+        ];
+    }
+
+    // ── Insert Product ───────────────────────────────────────────
+    public void insertProduct() {
+        try {
+            // Validate required fields
+            if (productName == null || productName.trim() == '') {
+                ApexPages.addMessage(new ApexPages.Message(
+                    ApexPages.Severity.ERROR, 'Product Name is required.'));
+                return;
+            }
+            if (serialNo == null || serialNo.trim() == '') {
+                ApexPages.addMessage(new ApexPages.Message(
+                    ApexPages.Severity.ERROR, 'Serial No is required.'));
+                return;
+            }
+            // Validate expiry date is after manufacture date
+            if (productRecord.ManufactureDate__c != null &&
+                productRecord.ExpiryDate__c != null &&
+                productRecord.ExpiryDate__c <= productRecord.ManufactureDate__c) {
+                ApexPages.addMessage(new ApexPages.Message(
+                    ApexPages.Severity.ERROR,
+                    'Expiry Date must be after Manufacture Date.'));
+                return;
+            }
+
+            ProductInventory__c p = new ProductInventory__c();
+            p.Name                = productName;
+            p.SerialNo__c         = Decimal.valueOf(serialNo);
+            p.ManufactureDate__c  = productRecord.ManufactureDate__c;
+            p.ExpiryDate__c       = productRecord.ExpiryDate__c;
+            insert p;
+
+            ApexPages.addMessage(new ApexPages.Message(
+                ApexPages.Severity.CONFIRM, ' Product Inserted Successfully!'));
+            clearFields();
+            loadProducts();
+
+        } catch (Exception e) {
+            ApexPages.addMessage(new ApexPages.Message(
+                ApexPages.Severity.ERROR, e.getMessage()));
+        }
+    }
+
+    // ── Select Product (load into form) ──────────────────────────
+    public void selectProduct() {
+        try {
+            if (selectedId == null) {
+                ApexPages.addMessage(new ApexPages.Message(
+                    ApexPages.Severity.ERROR, 'No record selected.'));
+                return;
+            }
+            ProductInventory__c p = [
+                SELECT Id, Name, SerialNo__c,
+                       ManufactureDate__c, ExpiryDate__c
+                FROM ProductInventory__c
+                WHERE Id = :selectedId
+                LIMIT 1
+            ];
+            productName                      = p.Name;
+            serialNo                         = String.valueOf(Integer.valueOf(p.SerialNo__c));
+            productRecord.ManufactureDate__c = p.ManufactureDate__c;
+            productRecord.ExpiryDate__c      = p.ExpiryDate__c;
+
+        } catch (Exception e) {
+            ApexPages.addMessage(new ApexPages.Message(
+                ApexPages.Severity.ERROR, e.getMessage()));
+        }
+    }
+
+    // ── Update Product ───────────────────────────────────────────
+    public void updateProduct() {
+        try {
+            if (selectedId == null) {
+                ApexPages.addMessage(new ApexPages.Message(
+                    ApexPages.Severity.ERROR, 'Please select a record to update.'));
+                return;
+            }
+            // Validate expiry date
+            if (productRecord.ManufactureDate__c != null &&
+                productRecord.ExpiryDate__c      != null &&
+                productRecord.ExpiryDate__c <= productRecord.ManufactureDate__c) {
+                ApexPages.addMessage(new ApexPages.Message(
+                    ApexPages.Severity.ERROR,
+                    'Expiry Date must be after Manufacture Date.'));
+                return;
+            }
+
+            ProductInventory__c p = new ProductInventory__c();
+            p.Id                  = selectedId;
+            p.Name                = productName;
+            p.SerialNo__c         = Decimal.valueOf(serialNo);
+            p.ManufactureDate__c  = productRecord.ManufactureDate__c;
+            p.ExpiryDate__c       = productRecord.ExpiryDate__c;
+            update p;
+
+            ApexPages.addMessage(new ApexPages.Message(
+                ApexPages.Severity.CONFIRM, ' Product Updated Successfully!'));
+            clearFields();
+            loadProducts();
+
+        } catch (Exception e) {
+            ApexPages.addMessage(new ApexPages.Message(
+                ApexPages.Severity.ERROR, e.getMessage()));
+        }
+    }
+
+    // ── Delete Product ───────────────────────────────────────────
+    public void deleteProduct() {
+        try {
+            if (selectedId == null) {
+                ApexPages.addMessage(new ApexPages.Message(
+                    ApexPages.Severity.ERROR, 'Please select a record to delete.'));
+                return;
+            }
+            ProductInventory__c p = new ProductInventory__c(Id = selectedId);
+            delete p;
+
+            ApexPages.addMessage(new ApexPages.Message(
+                ApexPages.Severity.CONFIRM, ' Product Deleted Successfully!'));
+            clearFields();
+            loadProducts();
+
+        } catch (Exception e) {
+            ApexPages.addMessage(new ApexPages.Message(
+                ApexPages.Severity.ERROR, e.getMessage()));
+        }
+    }
+
+    // ── Clear Fields ─────────────────────────────────────────────
+    public void clearFields() {
+        productName   = null;
+        serialNo      = null;
+        selectedId    = null;
+        productRecord = new ProductInventory__c();
+    }
+} 
+
+<apex:page controller="ProductInventoryController">
+    <apex:form >
+
+        <!-- ── INPUT FORM ───────────────────────────────────── -->
+        <apex:pageBlock title="Product Inventory Management System"
+                        id="formBlock">
+
+            <apex:pageMessages id="msgBlock"/>
+            <apex:inputHidden value="{!selectedId}"/>
+
+            <apex:pageBlockSection title="Product Details" columns="1">
+
+                <apex:inputText value="{!productName}"
+                    label="Product Name"/>
+
+                <apex:inputText value="{!serialNo}"
+                    label="Serial No"/>
+
+                <!-- Date fields use inputField with helper record -->
+                <apex:inputField value="{!productRecord.ManufactureDate__c}"
+                    label="Manufacture Date"/>
+
+                <apex:inputField value="{!productRecord.ExpiryDate__c}"
+                    label="Expiry Date"/>
+
+            </apex:pageBlockSection>
+
+            <apex:pageBlockButtons >
+                <apex:commandButton value="Insert"
+                    action="{!insertProduct}"
+                    reRender="formBlock, tableBlock, msgBlock"
+                    style="background-color:green; color:white;"/>
+
+                <apex:commandButton value="Update"
+                    action="{!updateProduct}"
+                    reRender="formBlock, tableBlock, msgBlock"
+                    style="background-color:blue; color:white;"/>
+
+                <apex:commandButton value="Delete"
+                    action="{!deleteProduct}"
+                    reRender="formBlock, tableBlock, msgBlock"
+                    style="background-color:red; color:white;"/>
+
+                <apex:commandButton value="Clear"
+                    action="{!clearFields}"
+                    reRender="formBlock, msgBlock"
+                    immediate="true"
+                    style="background-color:gray; color:white;"/>
+            </apex:pageBlockButtons>
+
+        </apex:pageBlock>
+
+        <!-- ── PRODUCT TABLE ────────────────────────────────── -->
+        <apex:pageBlock title="Product Inventory Records" id="tableBlock">
+            <apex:pageBlockTable value="{!productList}" var="p">
+
+                <apex:column headerValue="Action">
+                    <apex:commandButton value="Select"
+                        action="{!selectProduct}"
+                        reRender="formBlock, msgBlock">
+                        <apex:param name="selectedId"
+                                    value="{!p.Id}"
+                                    assignTo="{!selectedId}"/>
+                    </apex:commandButton>
+                </apex:column>
+
+                <apex:column value="{!p.Name}"
+                             headerValue="Product Name"/>
+                <apex:column value="{!p.SerialNo__c}"
+                             headerValue="Serial No"/>
+                <apex:column value="{!p.ManufactureDate__c}"
+                             headerValue="Manufacture Date"/>
+                <apex:column value="{!p.ExpiryDate__c}"
+                             headerValue="Expiry Date"/>
+
+            </apex:pageBlockTable>
+        </apex:pageBlock>
+
+    </apex:form>
+</apex:page> 
+
+
+public class StudentController {
+    public Integer studentId        {get; set;}
+    public String studentName       {get; set;}
+    public String email             {get; set;}
+    public String department        {get; set;}
+    public Id selectedId            {get; set;}
+    public Student__c studentRecord {get; set;}   // ← helper for date field
+    public List<Student__c> studentList {get; set;}
+
+    // Constructor
+    public StudentController() {
+        studentRecord = new Student__c();          // ← initialize helper
+        loadStudents();
+    }
+
+    // Load Records
+    public void loadStudents() {
+        studentList = [
+            SELECT Id, Name, Student_Id__c, Email__c, Birth_Date__c, Department__c
+            FROM Student__c
+        ];
+    }
+
+    // Insert Student
+    public void insertStudent() {
+        try {
+            Student__c s = new Student__c();
+            s.Student_Id__c = studentId;
+            s.Name          = studentName;
+            s.Email__c      = email;
+            s.Birth_Date__c = studentRecord.Birth_Date__c;  // ← from helper
+            s.Department__c = department;
+            insert s;
+            ApexPages.addMessage(new ApexPages.Message(
+                ApexPages.Severity.CONFIRM, 'Student Inserted Successfully'));
+            clearFields();
+            loadStudents();
+        } catch(Exception e) {
+            ApexPages.addMessage(new ApexPages.Message(
+                ApexPages.Severity.ERROR, e.getMessage()));
+        }
+    }
+
+    // Select Student
+    public void selectStudent() {
+        try {
+            if(selectedId == null) {
+                ApexPages.addMessage(new ApexPages.Message(
+                    ApexPages.Severity.ERROR, 'No record selected.'));
+                return;
+            }
+            Student__c s = [
+                SELECT Id, Name, Student_Id__c, Email__c, Birth_Date__c, Department__c
+                FROM Student__c
+                WHERE Id = :selectedId
+                LIMIT 1
+            ];
+            studentId                      = Integer.valueOf(s.Student_Id__c);
+            studentName                    = s.Name;
+            email                          = s.Email__c;
+            studentRecord.Birth_Date__c    = s.Birth_Date__c;  // ← into helper
+            department                     = s.Department__c;
+        } catch(Exception e) {
+            ApexPages.addMessage(new ApexPages.Message(
+                ApexPages.Severity.ERROR, e.getMessage()));
+        }
+    }
+
+    // Update Student
+    public void updateStudent() {
+        try {
+            if(selectedId == null) {
+                ApexPages.addMessage(new ApexPages.Message(
+                    ApexPages.Severity.ERROR, 'Please select a record to update.'));
+                return;
+            }
+            Student__c s    = new Student__c();
+            s.Id            = selectedId;
+            s.Student_Id__c = studentId;
+            s.Name          = studentName;
+            s.Email__c      = email;
+            s.Birth_Date__c = studentRecord.Birth_Date__c;  // ← from helper
+            s.Department__c = department;
+            update s;
+            ApexPages.addMessage(new ApexPages.Message(
+                ApexPages.Severity.CONFIRM, 'Student Updated Successfully'));
+            clearFields();
+            loadStudents();
+        } catch(Exception e) {
+            ApexPages.addMessage(new ApexPages.Message(
+                ApexPages.Severity.ERROR, e.getMessage()));
+        }
+    }
+
+    // Delete Student
+    public void deleteStudent() {
+        try {
+            if(selectedId == null) {
+                ApexPages.addMessage(new ApexPages.Message(
+                    ApexPages.Severity.ERROR, 'Please select a record to delete.'));
+                return;
+            }
+            Student__c s = new Student__c(Id = selectedId);
+            delete s;
+            ApexPages.addMessage(new ApexPages.Message(
+                ApexPages.Severity.CONFIRM, 'Student Deleted Successfully'));
+            clearFields();
+            loadStudents();
+        } catch(Exception e) {
+            ApexPages.addMessage(new ApexPages.Message(
+                ApexPages.Severity.ERROR, e.getMessage()));
+        }
+    }
+
+    // Clear Fields
+    public void clearFields() {
+        studentId              = null;
+        studentName            = null;
+        email                  = null;
+        studentRecord          = new Student__c();  // ← resets date cleanly
+        department             = null;
+        selectedId             = null;
+    }
+} 
+
+<apex:page controller="StudentController">
+    <apex:form >
+
+        <apex:pageBlock title="Student Management System" id="formBlock">
+            <apex:pageMessages id="msgBlock"/>
+            <apex:inputHidden value="{!selectedId}"/>
+
+            <apex:pageBlockSection columns="1">
+                <apex:inputText value="{!studentId}"
+                                label="Student ID"/>
+                <apex:inputText value="{!studentName}"
+                                label="Student Name"/>
+                <apex:inputText value="{!email}"
+                                label="Email"/>
+
+                <!-- ✅ FIXED: use inputField with helper record for date -->
+                <apex:inputField value="{!studentRecord.Birth_Date__c}"
+                                 label="Birth Date"/>
+
+                <apex:inputText value="{!department}"
+                                label="Department"/>
+            </apex:pageBlockSection>
+
+            <apex:pageBlockButtons >
+                <apex:commandButton value="Insert"
+                                    action="{!insertStudent}"
+                                    reRender="formBlock, tableBlock, msgBlock"/>
+                <apex:commandButton value="Update"
+                                    action="{!updateStudent}"
+                                    reRender="formBlock, tableBlock, msgBlock"/>
+                <apex:commandButton value="Delete"
+                                    action="{!deleteStudent}"
+                                    reRender="formBlock, tableBlock, msgBlock"/>
+                <apex:commandButton value="Clear"
+                                    action="{!clearFields}"
+                                    reRender="formBlock, msgBlock"
+                                    immediate="true"/>
+            </apex:pageBlockButtons>
+        </apex:pageBlock>
+
+        <apex:pageBlock title="Student Records" id="tableBlock">
+            <apex:pageBlockTable value="{!studentList}" var="s">
+                <apex:column headerValue="Action">
+                    <apex:commandButton value="Select"
+                                        action="{!selectStudent}"
+                                        reRender="formBlock, msgBlock">
+                        <apex:param name="selectedId"
+                                    value="{!s.Id}"
+                                    assignTo="{!selectedId}"/>
+                    </apex:commandButton>
+                </apex:column>
+                <apex:column value="{!s.Student_Id__c}"  headerValue="Student ID"/>
+                <apex:column value="{!s.Name}"           headerValue="Name"/>
+                <apex:column value="{!s.Email__c}"       headerValue="Email"/>
+                <apex:column value="{!s.Birth_Date__c}"  headerValue="Birth Date"/>
+                <apex:column value="{!s.Department__c}"  headerValue="Department"/>
+            </apex:pageBlockTable>
+        </apex:pageBlock>
+
+    </apex:form>
+</apex:page>
+
+
+public class Email {
+	public String toAddress {get; set;}
+	public String subject {get; set;}
+	public String body {get; set;}
+
+	public Blob fileBody {get; set;}
+	public String fileName {get; set;}
+
+	public void sendEmail() {
+
+    System.debug('Entered sendEmail method');
+    System.debug('To Address: ' + toAddress);
+    System.debug('Subject: ' + subject);
+
+    // Email validation (@gmail.com)
+    if (String.isEmpty(toAddress) || !toAddress.endsWith('@gmail.com')) {
+        System.debug('Invalid Email: Not a Gmail address');
+
+        ApexPages.addMessage(new ApexPages.Message(
+            ApexPages.Severity.ERROR,
+            'Please enter a valid Gmail address!'
+        ));
+        return;
+    }
+
+    // Subject validation (not empty)
+    if (String.isEmpty(subject)) {
+        System.debug('Invalid Subject: Subject is empty');
+
+        ApexPages.addMessage(new ApexPages.Message(
+            ApexPages.Severity.ERROR,
+            'Subject cannot be empty!'
+        ));
+        return;
+    }
+
+    System.debug('Validations passed');
+
+    Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+
+    mail.setToAddresses(new String[] {toAddress});
+    mail.setSubject(subject);
+    mail.setPlainTextBody(body);
+
+    // Attachment
+    if (fileBody != null && fileName != null) {
+        System.debug('Adding attachment: ' + fileName);
+
+        Messaging.EmailFileAttachment attachment = new Messaging.EmailFileAttachment();
+        attachment.setFileName(fileName);
+        attachment.setBody(fileBody);
+
+        mail.setFileAttachments(new Messaging.EmailFileAttachment[] {attachment});
+    }
+
+    System.debug('Sending email...');
+
+    Messaging.sendEmail(new Messaging.SingleEmailMessage[] {mail});
+
+    System.debug('Email sent successfully');
+
+    ApexPages.addMessage(new ApexPages.Message(
+        ApexPages.Severity.CONFIRM,
+        'Email Sent Successfully!'
+    ));
+}
+}
+
+<apex:page controller="Email" >
+    <apex:form enctype="multipart/form-data">
+
+    <apex:pageMessages />
+
+    <apex:pageBlock title="Send Email">
+
+        <apex:pageBlockSection columns="1">
+
+            <apex:inputText label="To Email" value="{!toAddress}" />
+
+            <apex:inputText label="Subject" value="{!subject}" />
+
+            <apex:inputTextarea label="Body" value="{!body}" rows="5"/>
+
+            <apex:inputFile value="{!fileBody}" filename="{!fileName}" />
+
+        </apex:pageBlockSection>
+
+        <apex:pageBlockButtons >
+            <apex:commandButton value="Send Email" action="{!sendEmail}" />
+        </apex:pageBlockButtons>
+
+    </apex:pageBlock>
+
+</apex:form>
+</apex:page>
